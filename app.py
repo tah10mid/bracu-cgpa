@@ -24,7 +24,14 @@ from course_data import (
     categorize_course, get_program_requirements, plan_general_education_courses,
     COURSE_NAMES, get_course_credit
 )
-from bracu_parser import create_parser
+
+# Try to import PDF parsing functionality
+try:
+    from bracu_parser import create_parser
+    PDF_PARSING_AVAILABLE = True
+except ImportError as e:
+    PDF_PARSING_AVAILABLE = False
+    st.error(f"PDF parsing not available: {str(e)}")
 
 # Page configuration
 st.set_page_config(
@@ -182,16 +189,91 @@ if program != st.session_state.program:
 st.sidebar.markdown("---")
 st.sidebar.subheader("📄 Upload Your Gradesheet")
 
-uploaded_file = st.sidebar.file_uploader(
-    "Choose a PDF file",
-    type=['pdf'],
-    help="Upload your official university gradesheet/transcript"
-)
+if PDF_PARSING_AVAILABLE:
+    uploaded_file = st.sidebar.file_uploader(
+        "Choose a PDF file",
+        type=['pdf'],
+        help="Upload your official university gradesheet/transcript"
+    )
 
-if uploaded_file is not None:
-    if st.sidebar.button("🔍 Parse Gradesheet", type="primary"):
-        try:
-            with st.spinner("Parsing gradesheet..."):
+    if uploaded_file is not None:
+        if st.sidebar.button("🔍 Parse Gradesheet", type="primary"):
+            try:
+                try:
+                with st.spinner("Parsing gradesheet..."):
+                    # Save uploaded file as temp.pdf (BRACU analyzer style)
+                    with open("temp.pdf", "wb") as f:
+                        f.write(uploaded_file.read())
+                    
+                    # Parse the gradesheet using BRACU-specific parser
+                    parser = create_parser()
+                    name, student_id, courses_done, semesters_done = parser.extract_gradesheet("temp.pdf")
+                    
+                    # Update session state with parsed data
+                    if name and student_id and courses_done:
+                        # Store in BRACU analyzer compatible format
+                        st.session_state.name = name
+                        st.session_state.student_id = student_id
+                        st.session_state.courses_done = courses_done
+                        st.session_state.semesters_done = semesters_done
+                        st.session_state.uploaded_gradesheet = True
+                        
+                        # Update calculator - always create new record
+                        # Convert parsed data to our AcademicRecord format
+                        record = AcademicRecord(name, student_id)
+                        
+                        # Add all courses to the record
+                        for course_code, course in courses_done.items():
+                            # Find which semester this course belongs to
+                            semester_name = "IMPORTED COURSES"
+                            for sem_name, sem_obj in semesters_done.items():
+                                if hasattr(sem_obj, 'courses'):
+                                    for sem_course in sem_obj.courses:
+                                        if sem_course.course_code == course_code:
+                                            semester_name = sem_name
+                                            break
+                            
+                            # Add course to the record
+                            record.add_course_to_semester(semester_name, course)
+                        
+                        st.session_state.academic_record = record
+                        st.session_state.calculator = CGPACalculator(record)
+                        st.session_state.analyzer = WhatIfAnalyzer(st.session_state.calculator)
+                        
+                        # Clean up temp file
+                        if os.path.exists("temp.pdf"):
+                            os.unlink("temp.pdf")
+                        
+                        # Show success message
+                        st.sidebar.success("✅ Gradesheet parsed successfully!")
+                        st.sidebar.write(f"👤 **Student:** {name}")
+                        st.sidebar.write(f"🆔 **ID:** {student_id}")
+                        st.sidebar.write(f"📚 **Courses:** {len(courses_done)}")
+                        st.sidebar.write(f"📖 **Semesters:** {len(semesters_done)}")
+                        
+                        current_cgpa = st.session_state.academic_record.get_current_cgpa() if st.session_state.academic_record else 0.0
+                        st.sidebar.write(f"🎯 **CGPA:** {current_cgpa:.2f}")
+                        
+                        st.rerun()
+                    else:
+                        st.sidebar.error("❌ Could not extract complete data from gradesheet")
+                        st.sidebar.write("Please check:")
+                        st.sidebar.write("- Gradesheet format is supported")
+                        st.sidebar.write("- Student info is clearly visible")
+                        st.sidebar.write("- Course data is readable")
+                    
+            except Exception as e:
+                st.sidebar.error(f"❌ Error parsing gradesheet: {str(e)}")
+                st.sidebar.write("Please ensure:")
+                st.sidebar.write("- File is a valid PDF")
+                st.sidebar.write("- Gradesheet contains course codes and grades")
+                st.sidebar.write("- Text is readable (not scanned image)")
+                
+                # Clean up temp file on error
+                if os.path.exists("temp.pdf"):
+                    os.unlink("temp.pdf")
+else:
+    st.sidebar.warning("📄 PDF parsing is currently unavailable. Please add courses manually below.")
                 # Save uploaded file as temp.pdf (BRACU analyzer style)
                 with open("temp.pdf", "wb") as f:
                     f.write(uploaded_file.read())

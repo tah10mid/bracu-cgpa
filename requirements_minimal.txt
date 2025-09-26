@@ -1,0 +1,6 @@
+# Alternative minimal requirements if PyMuPDF fails
+streamlit==1.28.1
+plotly==5.17.0
+pandas==2.1.4
+numpy==1.25.2
+# PyMuPDF==1.23.14  # Comment out if installation fails

@@ -4,7 +4,13 @@ Specialized parser for BRAC University gradesheet format
 Based on the official BRACU Gradesheet Analyzer implementation
 """
 
-import fitz  # PyMuPDF
+try:
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
+except ImportError:
+    PYMUPDF_AVAILABLE = False
+    import streamlit as st
+
 import re
 import logging
 import tempfile
@@ -54,6 +60,9 @@ class BRACUParser:
         Extract gradesheet data using BRACU-specific parsing logic
         Returns: (name, student_id, courses_done, semesters_done)
         """
+        if not PYMUPDF_AVAILABLE:
+            raise Exception("PyMuPDF is not available. Please install it to use PDF parsing functionality.")
+        
         courses_done = {}
         semesters_done = {}
         name, student_id = None, None
