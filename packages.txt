@@ -1,3 +1,0 @@
-# System packages for Streamlit Cloud
-# Essential packages for PDF processing
-libmupdf-dev
