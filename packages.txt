@@ -1,0 +1,10 @@
+# System packages for Streamlit Cloud
+# These packages will be installed via apt-get
+
+# For PDF processing (PyMuPDF dependencies)
+libmupdf-dev
+libfreetype6-dev
+libharfbuzz-dev
+libfontconfig1-dev
+libjpeg-dev
+libopenjp2-7-dev

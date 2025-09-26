@@ -1,6 +1,12 @@
-# 🎓 CGPA Projection & Academic Planning Tool
+# 🎓 BRACU CGPA Projection & Academic Planning Tool
 
-A comprehensive web-based academic planning tool for university students to track progress, project CGPA, and make informed decisions about their academic journey.
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bracu-cgpa.streamlit.app)
+
+A comprehensive web-based academic planning tool specifically designed for BRAC University students to track progress, project CGPA, and make informed decisions about their academic journey.
+
+## 🚀 **[Launch the Live App](https://bracu-cgpa.streamlit.app)**
+
+*Ready to deploy on Streamlit Cloud!*
 
 ## ✨ Features
 
